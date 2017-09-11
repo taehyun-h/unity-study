@@ -13,7 +13,9 @@ public class ScrollViewSceneManager : MonoBehaviour
     public int _size;
 
     // recycle scroll view
-    public GameObject _recycleScrollRect;
+    public GameObject _horizontalRecycleScrollRect;
+    public GameObject _verticalRecycleScrollRect;
+    public GameObject _gridRecycleScrollRect;
 
     private void Awake()
     {
@@ -34,10 +36,23 @@ public class ScrollViewSceneManager : MonoBehaviour
         _gridScrollRect.GetComponent<DefaultScrollView>().Refresh();
 
         // recycle scroll view
-        _recycleScrollRect.GetComponent<RecycleScrollView>()._delegateGetItem = GetRecycleItem;
-        _recycleScrollRect.GetComponent<RecycleScrollView>()._delegateRefreshItem = RefreshRecycleItem;
-        _recycleScrollRect.GetComponent<RecycleScrollView>()._delegateIsValidIndex = IsValidIndex;
-        _recycleScrollRect.GetComponent<RecycleScrollView>().Refresh();
+        // horizontal view
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateGetItem = GetRecycleItem;
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateRefreshItem = RefreshRecycleItem;
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateIsValidIndex = IsValidIndex;
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollView>().Refresh();
+
+        // veritcal view
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateGetItem = GetRecycleItem;
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateRefreshItem = RefreshRecycleItem;
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateIsValidIndex = IsValidIndex;
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollView>().Refresh();
+
+        // grid view
+        _gridRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateGetItem = GetRecycleItem;
+        _gridRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateRefreshItem = RefreshRecycleItem;
+        _gridRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateIsValidIndex = IsValidIndex;
+        _gridRecycleScrollRect.GetComponent<RecycleScrollView>().Refresh();
     }
 
     public RectTransform GetDefaultItem(int index)

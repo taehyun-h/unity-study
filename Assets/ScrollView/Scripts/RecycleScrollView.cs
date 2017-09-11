@@ -15,6 +15,7 @@ public class RecycleScrollView : ScrollRect
     private int _itemEndIndex;
     private bool _isDragging = false;
     private Vector2 _prevPosition;
+    private int _contentConstraintCount;
 
     protected override void OnDestroy()
     {
@@ -29,6 +30,10 @@ public class RecycleScrollView : ScrollRect
     {
         UpdateBoundary();
         base.LateUpdate();
+        if (!Application.isPlaying)
+        {
+            return;
+        }
         if (_isDragging && inertia)
         {
             float deltaTime = Time.unscaledDeltaTime;
@@ -85,8 +90,21 @@ public class RecycleScrollView : ScrollRect
             Debug.LogError("RefreshItem method is null!");
         }
 
-        // free content item
+        // get constraint count
         var content = GetComponent<ScrollRect>().content;
+        var gridLayoutGroup = content.GetComponent<GridLayoutGroup>();
+        _contentConstraintCount = 1;
+        if (gridLayoutGroup != null)
+        {
+            if (gridLayoutGroup.constraint == GridLayoutGroup.Constraint.Flexible)
+            {
+                Debug.LogError("Flexible GridLayoutGroup is not support");
+                return;
+            }
+            _contentConstraintCount = gridLayoutGroup.constraintCount;
+        }
+
+        // free content item
         for (int i = content.childCount - 1; i >= 0; i--)
         {
             content.GetChild(i).SetParent(_freeItem);
@@ -96,7 +114,7 @@ public class RecycleScrollView : ScrollRect
         _itemStartIndex = 0;
         _itemEndIndex = 0;
         float size = 0f;
-        float spaceSize = GetSpacing();
+        int count = 0;
         while (true)
         {
             // get new item
@@ -111,19 +129,43 @@ public class RecycleScrollView : ScrollRect
             item.SetParent(content);
             item.localPosition = Vector3.zero;
             item.localScale = Vector3.one;
+            count++;
 
-            // add size
-            size += (item.GetComponent<LayoutElement>().preferredWidth + spaceSize);
-
-            // check view boundary
-            if (size >= GetComponent<RectTransform>().sizeDelta.x)
+            // add size and check view bounds
+            if (horizontal)
             {
-                break;
+                size += (item.GetComponent<LayoutElement>().preferredWidth + GetSpacing());
+                if (size >= GetComponent<RectTransform>().sizeDelta.x && count % _contentConstraintCount == 0)
+                {
+                    break;
+                }
+            }
+            else
+            {
+                size += (item.GetComponent<LayoutElement>().preferredHeight + GetSpacing());
+                if (size >= GetComponent<RectTransform>().sizeDelta.y && count % _contentConstraintCount == 0)
+                {
+                    break;
+                }
             }
         }
 
         // init position
         content.localPosition = Vector3.zero;
+    }
+
+    private void CreatePool()
+    {
+        if (_freeItem != null)
+        {
+            return;
+        }
+
+        // create pool
+        var itemPool = GameObject.Find("ItemPool");
+        var pool = new GameObject(gameObject.name + "Pool");
+        pool.transform.SetParent(itemPool.transform);
+        _freeItem = pool.transform;
     }
 
     private RectTransform GetFreeItem(int index)
@@ -151,7 +193,7 @@ public class RecycleScrollView : ScrollRect
 
     private float GetSpacing()
     {
-        if (true)
+        if (horizontal)
         {
             if (GetComponentInChildren<HorizontalLayoutGroup>() == null)
             {
@@ -175,6 +217,30 @@ public class RecycleScrollView : ScrollRect
         }
     }
 
+    private Vector2 GetOffset(float offset)
+    {
+        if (horizontal)
+        {
+            return new Vector2(-offset, 0f);
+        }
+        else
+        {
+            return new Vector2(0f, offset);
+        }
+    }
+
+    private float GetSize(Vector3 size)
+    {
+        if (horizontal)
+        {
+            return size.x;
+        }
+        else
+        {
+            return size.y;
+        }
+    }
+
     private void UpdateBoundary()
     {
         if (!Application.isPlaying)
@@ -182,75 +248,30 @@ public class RecycleScrollView : ScrollRect
             return;
         }
 
+        float size = 0;
+        if (content.childCount > 0)
+        {
+            size = (GetSize(content.GetChild(0).GetComponent<RectTransform>().rect.size) + GetSpacing()) * 1.1f;
+        }
+
         bool changed = false;
-        var viewBounds = new Bounds(viewRect.rect.center, viewRect.rect.size);
         var contentBounds = GetBounds();
-
-        if (viewBounds.max.x > contentBounds.max.x)
+        var viewBounds = new Bounds(viewRect.rect.center, viewRect.rect.size);
+        if ((horizontal && GetSize(viewBounds.max) > GetSize(contentBounds.max)) || (!horizontal && GetSize(viewBounds.min) < GetSize(contentBounds.min)))
         {
-            // add item at end
-            var item = GetFreeItem(_itemEndIndex);
-            if (item != null)
-            {
-                item.gameObject.SetActive(true);
-                item.SetParent(content);
-                item.localPosition = Vector3.zero;
-                item.localScale = Vector3.one;
-                _itemEndIndex++;
-                changed = true;
-            }
+            changed |= AddItemAtEnd();
         }
-        else
+        else if ((horizontal && GetSize(viewBounds.max) < GetSize(contentBounds.max) - size) || (!horizontal && GetSize(viewBounds.min) > GetSize(contentBounds.min) + size))
         {
-            // remove item at end
-            var last = content.GetChild(content.childCount - 1).GetComponent<RectTransform>();
-            if (viewBounds.max.x < contentBounds.max.x - (last.rect.size.x + GetSpacing()) * 1.1f && _delegateIsValidIndex(_itemStartIndex - 1))
-            {
-                last.gameObject.SetActive(false);
-                last.SetParent(_freeItem);
-                _itemEndIndex--;
-                changed = true;
-            }
+            changed |= RemoveItemAtEnd();
         }
-
-        if (viewBounds.min.x < contentBounds.min.x)
+        if ((horizontal && GetSize(viewBounds.min) < GetSize(contentBounds.min)) || (!horizontal && GetSize(viewBounds.max) > GetSize(contentBounds.max)))
         {
-            // add item at start
-            var item = GetFreeItem(_itemStartIndex - 1);
-            if (item != null)
-            {
-                item.gameObject.SetActive(true);
-                item.SetParent(content);
-                item.SetAsFirstSibling();
-                item.localPosition = Vector3.zero;
-                item.localScale = Vector3.one;
-                _itemStartIndex--;
-
-                // refresh position
-                Vector2 offset = new Vector2(-(200 + GetSpacing()), 0f);
-                content.anchoredPosition += offset;
-                m_ContentStartPosition += offset;
-                _prevPosition += offset;
-                changed = true;
-            }
+            changed |= AddItemAtStart();
         }
-        else
+        else if ((horizontal && GetSize(viewBounds.min) > GetSize(contentBounds.min) + size) || (!horizontal && GetSize(viewBounds.max) < GetSize(contentBounds.max) - size))
         {
-            // remove item at start
-            var first = content.GetChild(0).GetComponent<RectTransform>();
-            if (viewBounds.min.x > contentBounds.min.x + (first.rect.size.x + GetSpacing()) * 1.1f && _delegateIsValidIndex(_itemEndIndex + 1))
-            {
-                first.gameObject.SetActive(false);
-                first.SetParent(_freeItem);
-                _itemStartIndex++;
-
-                // refresh position
-                Vector2 offset = new Vector2(-(first.rect.size.x + GetSpacing()), 0f);
-                content.anchoredPosition -= offset;
-                m_ContentStartPosition -= offset;
-                _prevPosition -= offset;
-                changed = true;
-            }
+            changed |= RemoveItemAtStart();
         }
 
         if (changed)
@@ -259,18 +280,101 @@ public class RecycleScrollView : ScrollRect
         }
     }
 
-    private void CreatePool()
+    private bool AddItemAtStart()
     {
-        if (_freeItem != null)
+        if (!_delegateIsValidIndex(_itemStartIndex - _contentConstraintCount))
         {
-            return;
+            return false;
         }
 
-        // create pool
-        var itemPool = GameObject.Find("ItemPool");
-        var pool = new GameObject(gameObject.name + "Pool");
-        pool.transform.SetParent(itemPool.transform);
-        _freeItem = pool.transform;
+        float size = 0f;
+        for (int i = 0; i < _contentConstraintCount; i++)
+        {
+            var item = GetFreeItem(_itemStartIndex - 1);
+            item.gameObject.SetActive(true);
+            item.SetParent(content);
+            item.SetAsFirstSibling();
+            item.localPosition = Vector3.zero;
+            item.localScale = Vector3.one;
+            size = Mathf.Max(size, GetSize(item.GetComponent<RectTransform>().rect.size));
+            _itemStartIndex--;
+        }
+
+        // refresh position
+        Vector2 offset = GetOffset(size + GetSpacing());
+        content.anchoredPosition += offset;
+        m_ContentStartPosition += offset;
+        _prevPosition += offset;
+
+        return true;
+    }
+
+    private bool AddItemAtEnd()
+    {
+        if (!_delegateIsValidIndex(_itemEndIndex))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _contentConstraintCount; i++)
+        {
+            var item = GetFreeItem(_itemEndIndex);
+            if (item == null)
+            {
+                break;
+            }
+            item.gameObject.SetActive(true);
+            item.SetParent(content);
+            item.localPosition = Vector3.zero;
+            item.localScale = Vector3.one;
+            _itemEndIndex++;
+        }
+
+        return true;
+    }
+
+    private bool RemoveItemAtStart()
+    {
+        if (!_delegateIsValidIndex(_itemEndIndex + _contentConstraintCount))
+        {
+            return false;
+        }
+
+        float size = 0f;
+        for (int i = 0; i < _contentConstraintCount; i++)
+        {
+            var start = content.GetChild(0);
+            start.gameObject.SetActive(false);
+            start.SetParent(_freeItem);
+            size = Mathf.Max(size, GetSize(start.GetComponent<RectTransform>().rect.size));
+            _itemStartIndex++;
+        }
+
+        // refresh position
+        Vector2 offset = GetOffset(size + GetSpacing());
+        content.anchoredPosition -= offset;
+        m_ContentStartPosition -= offset;
+        _prevPosition -= offset;
+
+        return true;
+    }
+
+    private bool RemoveItemAtEnd()
+    {
+        if (!_delegateIsValidIndex(_itemStartIndex - _contentConstraintCount))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _contentConstraintCount; i++)
+        {
+            var end = content.GetChild(content.childCount - 1).GetComponent<RectTransform>();
+            end.gameObject.SetActive(false);
+            end.SetParent(_freeItem);
+            _itemEndIndex--;
+        }
+
+        return true;
     }
 
     private Bounds GetBounds()
