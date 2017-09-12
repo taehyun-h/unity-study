@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class RecycleScrollView : ScrollRect
+public class RecycleScrollRect : ScrollRect
 {
     public delegate RectTransform GetItem(int index);
     public delegate void RefreshItem(RectTransform item, int index);
@@ -110,7 +110,7 @@ public class RecycleScrollView : ScrollRect
             content.GetChild(i).SetParent(_freeItem);
         }
 
-        // refresh scroll view
+        // refresh content
         _itemStartIndex = 0;
         _itemEndIndex = 0;
         float size = 0f;
@@ -124,7 +124,7 @@ public class RecycleScrollView : ScrollRect
                 break;
             }
 
-            // add item to scroll view
+            // add item to content
             item.gameObject.SetActive(true);
             item.SetParent(content);
             item.localPosition = Vector3.zero;

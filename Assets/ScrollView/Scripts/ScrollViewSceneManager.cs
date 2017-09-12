@@ -12,7 +12,7 @@ public class ScrollViewSceneManager : MonoBehaviour
     public GameObject _item;
     public int _size;
 
-    // recycle scroll view
+    // recycle scroll rect
     public GameObject _horizontalRecycleScrollRect;
     public GameObject _verticalRecycleScrollRect;
     public GameObject _gridRecycleScrollRect;
@@ -35,24 +35,24 @@ public class ScrollViewSceneManager : MonoBehaviour
         _gridScrollRect.GetComponent<DefaultScrollView>()._delegateGetItem = GetDefaultItem;
         _gridScrollRect.GetComponent<DefaultScrollView>().Refresh();
 
-        // recycle scroll view
-        // horizontal view
-        _horizontalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateGetItem = GetRecycleItem;
-        _horizontalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateRefreshItem = RefreshRecycleItem;
-        _horizontalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateIsValidIndex = IsValidIndex;
-        _horizontalRecycleScrollRect.GetComponent<RecycleScrollView>().Refresh();
+        // recycle scroll rect
+        // horizontal rect
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateGetItem = GetRecycleItem;
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateRefreshItem = RefreshRecycleItem;
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateIsValidIndex = IsValidIndex;
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>().Refresh();
 
-        // veritcal view
-        _verticalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateGetItem = GetRecycleItem;
-        _verticalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateRefreshItem = RefreshRecycleItem;
-        _verticalRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateIsValidIndex = IsValidIndex;
-        _verticalRecycleScrollRect.GetComponent<RecycleScrollView>().Refresh();
+        // veritcal rect
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateGetItem = GetRecycleItem;
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateRefreshItem = RefreshRecycleItem;
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateIsValidIndex = IsValidIndex;
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>().Refresh();
 
-        // grid view
-        _gridRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateGetItem = GetRecycleItem;
-        _gridRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateRefreshItem = RefreshRecycleItem;
-        _gridRecycleScrollRect.GetComponent<RecycleScrollView>()._delegateIsValidIndex = IsValidIndex;
-        _gridRecycleScrollRect.GetComponent<RecycleScrollView>().Refresh();
+        // grid rect
+        _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateGetItem = GetRecycleItem;
+        _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateRefreshItem = RefreshRecycleItem;
+        _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateIsValidIndex = IsValidIndex;
+        _gridRecycleScrollRect.GetComponent<RecycleScrollRect>().Refresh();
     }
 
     public RectTransform GetDefaultItem(int index)
