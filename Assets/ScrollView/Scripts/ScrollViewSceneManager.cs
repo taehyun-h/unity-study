@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class ScrollViewSceneManager : MonoBehaviour
 {
-    // default scroll view
+    // default scroll rect
     public GameObject _horizontalScrollRect;
     public GameObject _verticalScrollRect;
     public GameObject _gridScrollRect;
@@ -21,19 +21,19 @@ public class ScrollViewSceneManager : MonoBehaviour
     {
         // default scroll view
         // horizontal view
-        _horizontalScrollRect.GetComponent<DefaultScrollView>()._size = _size;
-        _horizontalScrollRect.GetComponent<DefaultScrollView>()._delegateGetItem = GetDefaultItem;
-        _horizontalScrollRect.GetComponent<DefaultScrollView>().Refresh();
+        _horizontalScrollRect.GetComponent<DefaultScrollRect>()._size = _size;
+        _horizontalScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItem = GetDefaultItem;
+        _horizontalScrollRect.GetComponent<DefaultScrollRect>().Refresh();
 
         // vertical view
-        _verticalScrollRect.GetComponent<DefaultScrollView>()._size = _size;
-        _verticalScrollRect.GetComponent<DefaultScrollView>()._delegateGetItem = GetDefaultItem;
-        _verticalScrollRect.GetComponent<DefaultScrollView>().Refresh();
+        _verticalScrollRect.GetComponent<DefaultScrollRect>()._size = _size;
+        _verticalScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItem = GetDefaultItem;
+        _verticalScrollRect.GetComponent<DefaultScrollRect>().Refresh();
 
         // grid view
-        _gridScrollRect.GetComponent<DefaultScrollView>()._size = _size;
-        _gridScrollRect.GetComponent<DefaultScrollView>()._delegateGetItem = GetDefaultItem;
-        _gridScrollRect.GetComponent<DefaultScrollView>().Refresh();
+        _gridScrollRect.GetComponent<DefaultScrollRect>()._size = _size;
+        _gridScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItem = GetDefaultItem;
+        _gridScrollRect.GetComponent<DefaultScrollRect>().Refresh();
 
         // recycle scroll rect
         // horizontal rect

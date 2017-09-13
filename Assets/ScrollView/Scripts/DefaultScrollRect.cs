@@ -3,8 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 [DisallowMultipleComponent]
-[RequireComponent(typeof(ScrollRect))]
-public class DefaultScrollView : MonoBehaviour
+public class DefaultScrollRect : ScrollRect
 {
     public delegate RectTransform GetItem(int index);
     [HideInInspector]
@@ -24,7 +23,6 @@ public class DefaultScrollView : MonoBehaviour
         }
 
         // clear content
-        var content = GetComponent<ScrollRect>().content;
         for (int i = content.childCount - 1; i >= 0; i--)
         {
             Destroy(content.GetChild(i).gameObject);
