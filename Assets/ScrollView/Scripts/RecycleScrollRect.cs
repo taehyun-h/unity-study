@@ -10,6 +10,7 @@ public class RecycleScrollRect : ScrollRect
     [System.NonSerialized] public GetItem _delegateGetItem = null;
     [System.NonSerialized] public RefreshItem _delegateRefreshItem = null;
     [System.NonSerialized] public IsValidIndex _delegateIsValidIndex = null;
+    [System.NonSerialized] public GameObject _pool;
     private Transform _freeItem = null;
     private int _itemStartIndex;
     private int _itemEndIndex;
@@ -75,7 +76,7 @@ public class RecycleScrollRect : ScrollRect
         UpdateBoundary();
     }
 
-    public void Refresh()
+    public void Init(int index)
     {
         if (!gameObject.activeSelf)
         {
@@ -91,7 +92,6 @@ public class RecycleScrollRect : ScrollRect
         }
 
         // get constraint count
-        var content = GetComponent<ScrollRect>().content;
         var gridLayoutGroup = content.GetComponent<GridLayoutGroup>();
         _contentConstraintCount = 1;
         if (gridLayoutGroup != null)
@@ -111,39 +111,73 @@ public class RecycleScrollRect : ScrollRect
         }
 
         // refresh content
-        _itemStartIndex = 0;
-        _itemEndIndex = 0;
+        _itemStartIndex = index - (index % _contentConstraintCount);
+        _itemEndIndex = index - (index % _contentConstraintCount);
         float size = 0f;
-        int count = 0;
+        // add item at end
         while (true)
         {
-            // get new item
-            var item = GetFreeItem(_itemEndIndex++);
-            if (item == null)
-            {
-                break;
-            }
-
-            // add item to content
-            item.gameObject.SetActive(true);
-            item.SetParent(content);
-            item.localPosition = Vector3.zero;
-            item.localScale = Vector3.one;
-            count++;
-
-            // add size and check view bounds
             if (horizontal)
             {
-                size += (item.GetComponent<LayoutElement>().preferredWidth + GetSpacing());
-                if (size >= GetComponent<RectTransform>().sizeDelta.x && count % _contentConstraintCount == 0)
+                if (size < GetComponent<RectTransform>().rect.size.x)
+                {
+                    if (!AddItemAtEnd())
+                    {
+                        break;
+                    }
+                    size += (content.GetChild(0).GetComponent<LayoutElement>().preferredWidth + GetSpacing());
+                }
+                else
                 {
                     break;
                 }
             }
             else
             {
-                size += (item.GetComponent<LayoutElement>().preferredHeight + GetSpacing());
-                if (size >= GetComponent<RectTransform>().sizeDelta.y && count % _contentConstraintCount == 0)
+                if (size < GetComponent<RectTransform>().rect.size.y)
+                {
+                    if (!AddItemAtEnd())
+                    {
+                        break;
+                    }
+                    size += (content.GetChild(0).GetComponent<LayoutElement>().preferredHeight + GetSpacing());
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+        // check enough to item at first
+        float size2 = size;
+        while (true)
+        {
+            if (horizontal)
+            {
+                if (size < GetComponent<RectTransform>().rect.size.x)
+                {
+                    if (!AddItemAtStart())
+                    {
+                        break;
+                    }
+                    size += (content.GetChild(0).GetComponent<LayoutElement>().preferredWidth + GetSpacing());
+                }
+                else
+                {
+                    break;
+                }
+            }
+            else
+            {
+                if (size < GetComponent<RectTransform>().rect.size.y)
+                {
+                    if (!AddItemAtStart())
+                    {
+                        break;
+                    }
+                    size += (content.GetChild(0).GetComponent<LayoutElement>().preferredHeight + GetSpacing());
+                }
+                else
                 {
                     break;
                 }
@@ -152,6 +186,38 @@ public class RecycleScrollRect : ScrollRect
 
         // init position
         content.localPosition = Vector3.zero;
+        if (index != -1)
+        {
+            float itemSize = horizontal ? content.GetChild(index - _itemStartIndex).GetComponent<LayoutElement>().preferredWidth : content.GetChild(index - _itemStartIndex).GetComponent<LayoutElement>().preferredHeight;
+            float viewSize = GetSize(GetComponent<RectTransform>().rect.size) - (horizontal ? content.GetComponent<LayoutGroup>().padding.left : content.GetComponent<LayoutGroup>().padding.top);
+            if (size - size2 + itemSize >= viewSize)
+            {
+                var localPosition = content.localPosition;
+                localPosition += (Vector3)GetOffset(size - size2 + itemSize - viewSize);
+                content.localPosition = localPosition;
+            }
+        }
+    }
+
+    public void Refresh()
+    {
+        int count = 0;
+        for (int i = _itemStartIndex; i < _itemEndIndex; i++)
+        {
+            if (!_delegateIsValidIndex(i))
+            {
+                _itemEndIndex = i;
+                for (int j = content.childCount - 1; j >= count; j++)
+                {
+                    var child = content.GetChild(j);
+                    child.gameObject.SetActive(false);
+                    child.SetParent(_freeItem);
+                }
+            }
+            var item = content.GetChild(count).GetComponent<RectTransform>();
+            _delegateRefreshItem(item, i);
+            count++;
+        }
     }
 
     private void CreatePool()
@@ -162,9 +228,8 @@ public class RecycleScrollRect : ScrollRect
         }
 
         // create pool
-        var itemPool = GameObject.Find("ItemPool");
         var pool = new GameObject(gameObject.name + "Pool");
-        pool.transform.SetParent(itemPool.transform);
+        pool.transform.SetParent(_pool.transform);
         _freeItem = pool.transform;
     }
 
@@ -195,7 +260,7 @@ public class RecycleScrollRect : ScrollRect
     {
         if (horizontal)
         {
-            if (GetComponentInChildren<HorizontalLayoutGroup>() == null)
+            if (content.GetComponent<HorizontalLayoutGroup>() == null)
             {
                 return GetComponentInChildren<GridLayoutGroup>().spacing.x;
             }
@@ -206,7 +271,7 @@ public class RecycleScrollRect : ScrollRect
         }
         else
         {
-            if (GetComponentInChildren<VerticalLayoutGroup>() == null)
+            if (content.GetComponent<VerticalLayoutGroup>() == null)
             {
                 return GetComponentInChildren<GridLayoutGroup>().spacing.y;
             }
@@ -361,12 +426,18 @@ public class RecycleScrollRect : ScrollRect
 
     private bool RemoveItemAtEnd()
     {
-        if (!_delegateIsValidIndex(_itemStartIndex - _contentConstraintCount))
+        int removeCount = (_itemEndIndex - _itemStartIndex) % _contentConstraintCount;
+        if (removeCount == 0)
+        {
+            removeCount = _contentConstraintCount;
+        }
+
+        if (!_delegateIsValidIndex(_itemStartIndex - removeCount))
         {
             return false;
         }
 
-        for (int i = 0; i < _contentConstraintCount; i++)
+        for (int i = 0; i < removeCount; i++)
         {
             var end = content.GetChild(content.childCount - 1).GetComponent<RectTransform>();
             end.gameObject.SetActive(false);

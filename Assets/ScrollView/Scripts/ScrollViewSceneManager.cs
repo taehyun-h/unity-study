@@ -40,19 +40,22 @@ public class ScrollViewSceneManager : MonoBehaviour
         _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateGetItem = GetRecycleItem;
         _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateRefreshItem = RefreshRecycleItem;
         _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateIsValidIndex = IsValidIndex;
-        _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>().Refresh();
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>()._pool = GameObject.Find("ScrollViewSceneManager");
+        _horizontalRecycleScrollRect.GetComponent<RecycleScrollRect>().Init(0);
 
         // veritcal rect
         _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateGetItem = GetRecycleItem;
         _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateRefreshItem = RefreshRecycleItem;
         _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateIsValidIndex = IsValidIndex;
-        _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>().Refresh();
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>()._pool = GameObject.Find("ScrollViewSceneManager");
+        _verticalRecycleScrollRect.GetComponent<RecycleScrollRect>().Init(0);
 
         // grid rect
         _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateGetItem = GetRecycleItem;
         _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateRefreshItem = RefreshRecycleItem;
         _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateIsValidIndex = IsValidIndex;
-        _gridRecycleScrollRect.GetComponent<RecycleScrollRect>().Refresh();
+        _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._pool = GameObject.Find("ScrollViewSceneManager");
+        _gridRecycleScrollRect.GetComponent<RecycleScrollRect>().Init(0);
     }
 
     public int GetDefaultItemSize()
