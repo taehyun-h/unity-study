@@ -21,17 +21,17 @@ public class ScrollViewSceneManager : MonoBehaviour
     {
         // default scroll view
         // horizontal view
-        _horizontalScrollRect.GetComponent<DefaultScrollRect>()._size = _size;
+        _horizontalScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItemSize = GetDefaultItemSize;
         _horizontalScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItem = GetDefaultItem;
         _horizontalScrollRect.GetComponent<DefaultScrollRect>().Refresh();
 
         // vertical view
-        _verticalScrollRect.GetComponent<DefaultScrollRect>()._size = _size;
+        _verticalScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItemSize = GetDefaultItemSize;
         _verticalScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItem = GetDefaultItem;
         _verticalScrollRect.GetComponent<DefaultScrollRect>().Refresh();
 
         // grid view
-        _gridScrollRect.GetComponent<DefaultScrollRect>()._size = _size;
+        _gridScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItemSize = GetDefaultItemSize;
         _gridScrollRect.GetComponent<DefaultScrollRect>()._delegateGetItem = GetDefaultItem;
         _gridScrollRect.GetComponent<DefaultScrollRect>().Refresh();
 
@@ -53,6 +53,11 @@ public class ScrollViewSceneManager : MonoBehaviour
         _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateRefreshItem = RefreshRecycleItem;
         _gridRecycleScrollRect.GetComponent<RecycleScrollRect>()._delegateIsValidIndex = IsValidIndex;
         _gridRecycleScrollRect.GetComponent<RecycleScrollRect>().Refresh();
+    }
+
+    public int GetDefaultItemSize()
+    {
+        return _size;
     }
 
     public RectTransform GetDefaultItem(int index)
